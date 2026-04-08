@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>외계행성 공정 시뮬레이터</title>
+  <style>
+    body {
+      margin: 0;
+      background: black;
+      color: white;
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+    }
+    .ui {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(0,0,0,0.5);
+      padding: 10px;
+      border-radius: 10px;
+    }
+    button {
+      margin: 5px 0;
+      width: 120px;
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+
+<div class="ui">
+  <div>🌍 행성 크기: <span id="sizeVal">50</span></div>
+  <input type="range" id="size" min="20" max="150" value="50">
+
+  <div>🌡 온도: <span id="tempVal">0</span></div>
+  <input type="range" id="temp" min="-100" max="100" value="0">
+
+  <button onclick="addMoon()">🌕 위성 추가</button>
+  <button onclick="randomize()">🎲 랜덤 생성</button>
+</div>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let planet = {
+  x: canvas.width/2,
+  y: canvas.height/2,
+  size: 50,
+  temp: 0,
+  color: 'blue'
+};
+
+let moons = [];
+
+function updateColor() {
+  if (planet.temp < -30) planet.color = 'lightblue';
+  else if (planet.temp < 30) planet.color = 'green';
+  else planet.color = 'red';
+}
+
+function addMoon() {
+  moons.push({
+    angle: Math.random()*Math.PI*2,
+    dist: 100 + Math.random()*50,
+    speed: 0.01 + Math.random()*0.02
+  });
+}
+
+function randomize() {
+  planet.size = Math.random()*130 + 20;
+  planet.temp = Math.random()*200 - 100;
+  moons = [];
+  for(let i=0;i<Math.floor(Math.random()*5);i++) addMoon();
+  updateUI();
+}
+
+function updateUI() {
+  document.getElementById('size').value = planet.size;
+  document.getElementById('temp').value = planet.temp;
+  document.getElementById('sizeVal').innerText = Math.floor(planet.size);
+  document.getElementById('tempVal').innerText = Math.floor(planet.temp);
+}
+
+// 슬라이더 이벤트
+
+document.getElementById('size').oninput = (e)=>{
+  planet.size = e.target.value;
+  updateUI();
+};
+
+document.getElementById('temp').oninput = (e)=>{
+  planet.temp = e.target.value;
+  updateColor();
+  updateUI();
+};
+
+function draw() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // 행성
+  ctx.beginPath();
+  ctx.arc(planet.x, planet.y, planet.size, 0, Math.PI*2);
+  ctx.fillStyle = planet.color;
+  ctx.fill();
+
+  // 위성
+  moons.forEach(m=>{
+    m.angle += m.speed;
+    let x = planet.x + Math.cos(m.angle)*m.dist;
+    let y = planet.y + Math.sin(m.angle)*m.dist;
+
+    ctx.beginPath();
+    ctx.arc(x, y, 8, 0, Math.PI*2);
+    ctx.fillStyle = 'gray';
+    ctx.fill();
+  });
+
+  requestAnimationFrame(draw);
+}
+
+updateUI();
+updateColor();
+draw();
+</script>
+
+</body>
+</html>
