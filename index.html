@@ -1,101 +1,107 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <title>엔진 시뮬레이터 (개선형)</title>
-  <style>
-    body { text-align:center; font-family:sans-serif; background:#111; color:white; }
-    canvas { background:#222; margin-top:20px; }
-    button { margin:5px; padding:10px 20px; font-size:16px; }
-  </style>
+<meta charset="UTF-8">
+<title>엔진 시뮬레이터</title>
+<style>
+body {
+  margin:0;
+  background:#f0f0f0;
+  font-family:sans-serif;
+  text-align:center;
+}
+canvas {
+  background:#e5e5e5;
+  margin-top:20px;
+  border-radius:12px;
+}
+.controls {
+  margin-top:15px;
+}
+button {
+  padding:10px 15px;
+  margin:5px;
+  border:none;
+  border-radius:8px;
+  background:#333;
+  color:white;
+  cursor:pointer;
+}
+button:hover { background:#555; }
+</style>
 </head>
 <body>
-  <h1>V형 엔진 시뮬레이터</h1>
-  <p id="engineType">V4 엔진</p>
-  <button onclick="toggleEngine()">작동 / 정지</button>
-  <button onclick="addCylinder()">+ 실린더</button>
 
-  <canvas id="canvas" width="500" height="350"></canvas>
+<h2 id="engineType">V6 엔진</h2>
+<canvas id="engineCanvas" width="800" height="400"></canvas>
 
-  <audio id="engineSound" loop>
-    <source src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_115b9b5c82.mp3?filename=engine-5936.mp3" type="audio/mpeg">
-  </audio>
+<div class="controls">
+  <button onclick="changeCyl(-1)">- 기통</button>
+  <button onclick="changeCyl(1)">+ 기통</button>
+  <br>
+  RPM: <span id="rpmVal">1</span>
+  <input type="range" min="1" max="10" value="1" id="rpmSlider">
+</div>
 
 <script>
-const canvas = document.getElementById('canvas');
+const canvas = document.getElementById('engineCanvas');
 const ctx = canvas.getContext('2d');
-const sound = document.getElementById('engineSound');
 
-let running = false;
+let types = [6,8,10,12];
+let index = 0;
+let rpm = 1;
 let angle = 0;
-let cylinders = 4;
 
-const types = [6,8,10,12];
-let typeIndex = -1;
+const slider = document.getElementById('rpmSlider');
+slider.oninput = () => {
+  rpm = slider.value;
+  document.getElementById('rpmVal').innerText = rpm;
+};
 
-function toggleEngine(){
-  running = !running;
-  if(running) sound.play(); else sound.pause();
-}
-
-function addCylinder(){
-  typeIndex++;
-  if(typeIndex >= types.length) typeIndex = 0;
-  cylinders = types[typeIndex];
-  document.getElementById('engineType').innerText = `V${cylinders} 엔진`;
-}
-
-function drawPiston(xBase, yBase, offsetAngle){
-  let a = angle + offsetAngle;
-  let crankRadius = 30;
-  let rodLength = 80;
-
-  let crankX = 250 + Math.cos(a) * crankRadius;
-  let crankY = 200 + Math.sin(a) * crankRadius;
-
-  let pistonY = yBase + Math.sin(a) * 30;
-
-  // 크랭크
-  ctx.beginPath();
-  ctx.moveTo(250,200);
-  ctx.lineTo(crankX,crankY);
-  ctx.stroke();
-
-  // 커넥팅 로드
-  ctx.beginPath();
-  ctx.moveTo(crankX,crankY);
-  ctx.lineTo(xBase,pistonY);
-  ctx.stroke();
-
-  // 피스톤
-  ctx.fillRect(xBase-15,pistonY-15,30,30);
+function changeCyl(dir){
+  index += dir;
+  if(index < 0) index = types.length-1;
+  if(index >= types.length) index = 0;
+  document.getElementById('engineType').innerText = "V" + types[index] + " 엔진";
 }
 
 function draw(){
-  ctx.clearRect(0,0,500,350);
-
-  // 크랭크축
-  ctx.beginPath();
-  ctx.arc(250,200,30,0,Math.PI*2);
-  ctx.stroke();
-
-  let bankAngle = Math.PI/6; // V각도
-
-  for(let i=0;i<cylinders;i++){
-    let side = i % 2 === 0 ? -1 : 1;
-    let index = Math.floor(i/2);
-
-    let x = 250 + side * 120;
-    let y = 80 + index * 40;
-
-    drawPiston(x, y, (i * Math.PI*2)/cylinders);
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  
+  let cyl = types[index];
+  let spacing = 80;
+  let startX = canvas.width/2 - (cyl/2 * spacing)/2;
+  
+  for(let i=0;i<cyl;i++){
+    let phase = (i % 2 === 0) ? 0 : Math.PI;
+    let y = 200 + Math.sin(angle + phase) * 40;
+    let x = startX + i * spacing;
+    
+    // 피스톤
+    ctx.fillStyle = '#c0c0c0';
+    ctx.fillRect(x, y, 40, 60);
+    
+    // 커넥팅로드
+    ctx.strokeStyle = '#888';
+    ctx.beginPath();
+    ctx.moveTo(x+20, y+60);
+    ctx.lineTo(x+20, 300);
+    ctx.stroke();
   }
-
-  if(running) angle += 0.08;
-  requestAnimationFrame(draw);
+  
+  // 크랭크축
+  ctx.fillStyle = '#666';
+  ctx.fillRect(0,300,800,20);
 }
 
-draw();
+function animate(){
+  angle += 0.05 * rpm;
+  draw();
+  requestAnimationFrame(animate);
+}
+
+animate();
 </script>
+
 </body>
 </html>
