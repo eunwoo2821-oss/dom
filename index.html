@@ -2,134 +2,77 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>외계행성 공정 시뮬레이터</title>
+  <title>엔진 시뮬레이터</title>
   <style>
-    body {
-      margin: 0;
-      background: black;
-      color: white;
-      font-family: Arial, sans-serif;
-      overflow: hidden;
-    }
-    canvas {
-      display: block;
-    }
-    .ui {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      background: rgba(0,0,0,0.5);
-      padding: 10px;
-      border-radius: 10px;
-    }
-    button {
-      margin: 5px 0;
-      width: 120px;
-    }
+    body { text-align:center; font-family:sans-serif; background:#111; color:white; }
+    canvas { background:#222; margin-top:20px; }
+    button { margin:5px; padding:10px 20px; font-size:16px; }
   </style>
 </head>
 <body>
+  <h1>엔진 시뮬레이터</h1>
+  <p id="engineType">V4 엔진</p>
+  <button onclick="toggleEngine()">작동 / 정지</button>
+  <button onclick="addCylinder()">+ 실린더</button>
 
-<canvas id="canvas"></canvas>
+  <canvas id="canvas" width="400" height="300"></canvas>
 
-<div class="ui">
-  <div>🌍 행성 크기: <span id="sizeVal">50</span></div>
-  <input type="range" id="size" min="20" max="150" value="50">
-
-  <div>🌡 온도: <span id="tempVal">0</span></div>
-  <input type="range" id="temp" min="-100" max="100" value="0">
-
-  <button onclick="addMoon()">🌕 위성 추가</button>
-  <button onclick="randomize()">🎲 랜덤 생성</button>
-</div>
+  <audio id="engineSound" loop>
+    <source src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_115b9b5c82.mp3?filename=engine-5936.mp3" type="audio/mpeg">
+  </audio>
 
 <script>
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
+const sound = document.getElementById('engineSound');
 
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+let running = false;
+let angle = 0;
+let cylinders = 4;
 
-let planet = {
-  x: canvas.width/2,
-  y: canvas.height/2,
-  size: 50,
-  temp: 0,
-  color: 'blue'
-};
+const types = [6,8,10,12];
+let typeIndex = -1;
 
-let moons = [];
-
-function updateColor() {
-  if (planet.temp < -30) planet.color = 'lightblue';
-  else if (planet.temp < 30) planet.color = 'green';
-  else planet.color = 'red';
+function toggleEngine(){
+  running = !running;
+  if(running) sound.play(); else sound.pause();
 }
 
-function addMoon() {
-  moons.push({
-    angle: Math.random()*Math.PI*2,
-    dist: 100 + Math.random()*50,
-    speed: 0.01 + Math.random()*0.02
-  });
+function addCylinder(){
+  typeIndex++;
+  if(typeIndex >= types.length) typeIndex = 0;
+  cylinders = types[typeIndex];
+  document.getElementById('engineType').innerText = `V${cylinders} 엔진`;
 }
 
-function randomize() {
-  planet.size = Math.random()*130 + 20;
-  planet.temp = Math.random()*200 - 100;
-  moons = [];
-  for(let i=0;i<Math.floor(Math.random()*5);i++) addMoon();
-  updateUI();
-}
+function draw(){
+  ctx.clearRect(0,0,400,300);
 
-function updateUI() {
-  document.getElementById('size').value = planet.size;
-  document.getElementById('temp').value = planet.temp;
-  document.getElementById('sizeVal').innerText = Math.floor(planet.size);
-  document.getElementById('tempVal').innerText = Math.floor(planet.temp);
-}
-
-// 슬라이더 이벤트
-
-document.getElementById('size').oninput = (e)=>{
-  planet.size = e.target.value;
-  updateUI();
-};
-
-document.getElementById('temp').oninput = (e)=>{
-  planet.temp = e.target.value;
-  updateColor();
-  updateUI();
-};
-
-function draw() {
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-
-  // 행성
+  // 중앙 크랭크
   ctx.beginPath();
-  ctx.arc(planet.x, planet.y, planet.size, 0, Math.PI*2);
-  ctx.fillStyle = planet.color;
-  ctx.fill();
+  ctx.arc(200,150,30,0,Math.PI*2);
+  ctx.strokeStyle = 'white';
+  ctx.stroke();
 
-  // 위성
-  moons.forEach(m=>{
-    m.angle += m.speed;
-    let x = planet.x + Math.cos(m.angle)*m.dist;
-    let y = planet.y + Math.sin(m.angle)*m.dist;
+  // 피스톤 표현
+  for(let i=0;i<cylinders;i++){
+    let a = angle + (i*(Math.PI*2/cylinders));
+    let x = 200 + Math.cos(a)*80;
+    let y = 150 + Math.sin(a)*80;
 
     ctx.beginPath();
-    ctx.arc(x, y, 8, 0, Math.PI*2);
-    ctx.fillStyle = 'gray';
-    ctx.fill();
-  });
+    ctx.moveTo(200,150);
+    ctx.lineTo(x,y);
+    ctx.stroke();
 
+    ctx.fillRect(x-10,y-10,20,20);
+  }
+
+  if(running) angle += 0.05;
   requestAnimationFrame(draw);
 }
 
-updateUI();
-updateColor();
 draw();
 </script>
-
 </body>
 </html>
