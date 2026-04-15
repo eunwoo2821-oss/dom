@@ -1,102 +1,62 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <title>엔진 시뮬레이터 (개선형)</title>
-  <style>
-    body { text-align:center; font-family:sans-serif; background:#111; color:white; }
-    canvas { background:#222; margin-top:20px; }
-    button { margin:5px; padding:10px 20px; font-size:16px; }
-  </style>
+<meta charset="UTF-8">
+<title>행성 이동 시간 시뮬레이터</title>
+<style>
+body { font-family: Arial; text-align: center; background: #0b0f2a; color: white; }
+select, button { padding: 10px; margin: 10px; font-size: 16px; }
+.result { margin-top: 20px; font-size: 18px; }
+</style>
 </head>
 <body>
-  <h1>V형 엔진 시뮬레이터</h1>
-  <p id="engineType">V4 엔진</p>
-  <button onclick="toggleEngine()">작동 / 정지</button>
-  <button onclick="addCylinder()">+ 실린더</button>
+<h1>🌌 행성 이동 시간 시뮬레이터</h1>
 
-  <canvas id="canvas" width="500" height="350"></canvas>
+<select id="planet">
+<option value="57900000">수성</option>
+<option value="108200000">금성</option>
+<option value="149600000">지구</option>
+<option value="227900000">화성</option>
+<option value="778500000">목성</option>
+<option value="1433000000">토성</option>
+<option value="2871000000">천왕성</option>
+<option value="4495000000">해왕성</option>
+</select>
 
-  <audio id="engineSound" loop>
-    <source src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_115b9b5c82.mp3?filename=engine-5936.mp3" type="audio/mpeg">
-  </audio>
+<br>
+<button onclick="calculate()">계산하기</button>
+
+<div class="result" id="result"></div>
 
 <script>
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
-const sound = document.getElementById('engineSound');
-
-let running = false;
-let angle = 0;
-let cylinders = 4;
-
-const types = [6,8,10,12];
-let typeIndex = -1;
-
-function toggleEngine(){
-  running = !running;
-  if(running) sound.play(); else sound.pause();
+function formatTime(hours) {
+    let years = Math.floor(hours / (24 * 365));
+    let days = Math.floor((hours % (24 * 365)) / 24);
+    let hrs = Math.floor(hours % 24);
+    return `${years}년 ${days}일 ${hrs}시간`;
 }
 
-function addCylinder(){
-  typeIndex++;
-  if(typeIndex >= types.length) typeIndex = 0;
-  cylinders = types[typeIndex];
-  document.getElementById('engineType').innerText = `V${cylinders} 엔진`;
+function calculate() {
+    const distance = document.getElementById('planet').value; // km
+
+    const walkSpeed = 5; // km/h
+    const carSpeed = 100; // km/h
+    const planeSpeed = 900; // km/h
+    const lightSpeed = 1079252848.8; // km/h
+
+    let walkTime = distance / walkSpeed;
+    let carTime = distance / carSpeed;
+    let planeTime = distance / planeSpeed;
+    let lightTime = distance / lightSpeed;
+
+    document.getElementById('result').innerHTML = `
+    🚶 걷기: ${formatTime(walkTime)}<br>
+    🚗 자동차: ${formatTime(carTime)}<br>
+    ✈️ 비행기: ${formatTime(planeTime)}<br>
+    ⚡ 광속: ${lightTime.toFixed(6)} 시간
+    `;
 }
-
-function drawPiston(xBase, yBase, offsetAngle){
-  let a = angle + offsetAngle;
-  let crankRadius = 30;
-  let rodLength = 80;
-
-  let crankX = 250 + Math.cos(a) * crankRadius;
-  let crankY = 200 + Math.sin(a) * crankRadius;
-
-  let pistonY = yBase + Math.sin(a) * 30;
-
-  // 크랭크
-  ctx.beginPath();
-  ctx.moveTo(250,200);
-  ctx.lineTo(crankX,crankY);
-  ctx.stroke();
-
-  // 커넥팅 로드
-  ctx.beginPath();
-  ctx.moveTo(crankX,crankY);
-  ctx.lineTo(xBase,pistonY);
-  ctx.stroke();
-
-  // 피스톤
-  ctx.fillRect(xBase-15,pistonY-15,30,30);
-}
-
-function draw(){
-  ctx.clearRect(0,0,500,350);
-
-  // 크랭크축
-  ctx.beginPath();
-  ctx.arc(250,200,30,0,Math.PI*2);
-  ctx.stroke();
-
-  let bankAngle = Math.PI/6; // V각도
-
-  for(let i=0;i<cylinders;i++){
-    let side = i % 2 === 0 ? -1 : 1;
-    let index = Math.floor(i/2);
-
-    let x = 250 + side * 120;
-    let y = 80 + index * 40;
-
-    drawPiston(x, y, (i * Math.PI*2)/cylinders);
-  }
-
-  if(running) angle += 0.08;
-  requestAnimationFrame(draw);
-}
-
-draw();
 </script>
+
 </body>
 </html>
-
