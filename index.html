@@ -9,8 +9,13 @@ body { font-family: Arial; background: #0b0f2a; color: white; margin:0; }
 .left { width: 50%; padding: 20px; }
 .right { width: 50%; display:flex; justify-content:center; align-items:center; }
 select, button { padding: 10px; margin: 10px; font-size: 16px; }
-.item { display: flex; align-items: center; margin: 15px 0; }
-.item img { width: 50px; margin-right: 10px; }
+.item { margin: 20px 0; }
+.bar { height: 30px; background: #222; border-radius: 20px; overflow: hidden; }
+.fill { height: 100%; width: 0%; display:flex; align-items:center; padding-left:10px; transition: width 2s ease; }
+.walk { background: #4caf50; }
+.car { background: #2196f3; }
+.plane { background: #ff9800; }
+.light { background: #e91e63; }
 .planet-img { width: 300px; }
 </style>
 </head>
@@ -18,7 +23,7 @@ select, button { padding: 10px; margin: 10px; font-size: 16px; }
 <div class="container">
 
 <div class="left">
-<h2>🚀 이동 시간</h2>
+<h2>🚀 이동 시간 (애니메이션)</h2>
 
 <select id="planet" onchange="updatePlanet()">
 <option value="57900000" data-img="https://upload.wikimedia.org/wikipedia/commons/4/4a/Mercury_in_true_color.jpg">수성</option>
@@ -31,13 +36,13 @@ select, button { padding: 10px; margin: 10px; font-size: 16px; }
 <option value="4495000000" data-img="https://upload.wikimedia.org/wikipedia/commons/5/56/Neptune_Full.jpg">해왕성</option>
 </select>
 
-<button onclick="calculate()">계산하기</button>
+<button onclick="calculate()">출발 🚀</button>
 
 <div id="result">
-<div class="item"><img src="https://cdn-icons-png.flaticon.com/512/1995/1995574.png">🚶 걷기: -</div>
-<div class="item"><img src="https://cdn-icons-png.flaticon.com/512/744/744465.png">🚗 자동차: -</div>
-<div class="item"><img src="https://cdn-icons-png.flaticon.com/512/190/190601.png">✈️ 비행기: -</div>
-<div class="item"><img src="https://cdn-icons-png.flaticon.com/512/3212/3212608.png">⚡ 광속: -</div>
+<div class="item">🚶 걷기<div class="bar"><div id="walkBar" class="fill walk"></div></div></div>
+<div class="item">🚗 자동차<div class="bar"><div id="carBar" class="fill car"></div></div></div>
+<div class="item">✈️ 비행기<div class="bar"><div id="planeBar" class="fill plane"></div></div></div>
+<div class="item">⚡ 광속<div class="bar"><div id="lightBar" class="fill light"></div></div></div>
 </div>
 </div>
 
@@ -51,8 +56,7 @@ select, button { padding: 10px; margin: 10px; font-size: 16px; }
 function formatTime(hours) {
     let years = Math.floor(hours / (24 * 365));
     let days = Math.floor((hours % (24 * 365)) / 24);
-    let hrs = Math.floor(hours % 24);
-    return `${years}년 ${days}일 ${hrs}시간`;
+    return `${years}년 ${days}일`;
 }
 
 function updatePlanet() {
@@ -64,24 +68,25 @@ function updatePlanet() {
 function calculate() {
     const distance = document.getElementById('planet').value;
 
-    const walkSpeed = 5;
-    const carSpeed = 100;
-    const planeSpeed = 900;
-    const lightSpeed = 1079252848.8;
+    const walk = distance / 5;
+    const car = distance / 100;
+    const plane = distance / 900;
+    const light = distance / 1079252848.8;
 
-    let walkTime = distance / walkSpeed;
-    let carTime = distance / carSpeed;
-    let planeTime = distance / planeSpeed;
-    let lightTime = distance / lightSpeed;
+    const max = Math.max(walk, car, plane, light);
 
-    document.getElementById('result').innerHTML = `
-    <div class="item"><img src="https://cdn-icons-png.flaticon.com/512/1995/1995574.png">🚶 걷기: ${formatTime(walkTime)}</div>
-    <div class="item"><img src="https://cdn-icons-png.flaticon.com/512/744/744465.png">🚗 자동차: ${formatTime(carTime)}</div>
-    <div class="item"><img src="https://cdn-icons-png.flaticon.com/512/190/190601.png">✈️ 비행기: ${formatTime(planeTime)}</div>
-    <div class="item"><img src="https://cdn-icons-png.flaticon.com/512/3212/3212608.png">⚡ 광속: ${lightTime.toFixed(6)} 시간</div>
-    `;
+    document.getElementById('walkBar').style.width = (walk/max*100) + "%";
+    document.getElementById('carBar').style.width = (car/max*100) + "%";
+    document.getElementById('planeBar').style.width = (plane/max*100) + "%";
+    document.getElementById('lightBar').style.width = (light/max*100) + "%";
+
+    document.getElementById('walkBar').innerText = formatTime(walk);
+    document.getElementById('carBar').innerText = formatTime(car);
+    document.getElementById('planeBar').innerText = formatTime(plane);
+    document.getElementById('lightBar').innerText = light.toFixed(6) + "시간";
 }
 </script>
 
 </body>
 </html>
+
