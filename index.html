@@ -1,96 +1,101 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<title>행성 이동 시간 시뮬레이터</title>
-<style>
-body { font-family: Arial; background: #0b0f2a; color: white; margin:0; overflow:hidden; }
-.container { display: flex; height: 100vh; }
-.left { width: 50%; padding: 20px; }
-.right { width: 50%; display:flex; justify-content:center; align-items:center; }
-select, button, input { padding: 10px; margin: 10px; font-size: 16px; }
-.track { position: relative; height: 60px; margin: 20px 0; background: #111; border-radius: 30px; }
-.icon { position: absolute; top: 10px; width: 40px; left:0; }
-.planet-img { width: 300px; }
-</style>
+  <meta charset="UTF-8">
+  <title>엔진 시뮬레이터 (개선형)</title>
+  <style>
+    body { text-align:center; font-family:sans-serif; background:#111; color:white; }
+    canvas { background:#222; margin-top:20px; }
+    button { margin:5px; padding:10px 20px; font-size:16px; }
+  </style>
 </head>
 <body>
-<div class="container">
+  <h1>V형 엔진 시뮬레이터</h1>
+  <p id="engineType">V4 엔진</p>
+  <button onclick="toggleEngine()">작동 / 정지</button>
+  <button onclick="addCylinder()">+ 실린더</button>
 
-<div class="left">
-<h2>🚀 이동 애니메이션</h2>
+  <canvas id="canvas" width="500" height="350"></canvas>
 
-<select id="planet" onchange="updatePlanet()">
-<option value="57900000" data-img="https://upload.wikimedia.org/wikipedia/commons/4/4a/Mercury_in_true_color.jpg">수성</option>
-<option value="108200000" data-img="https://upload.wikimedia.org/wikipedia/commons/e/e5/Venus-real_color.jpg">금성</option>
-<option value="149600000" data-img="https://upload.wikimedia.org/wikipedia/commons/9/97/The_Earth_seen_from_Apollo_17.jpg">지구</option>
-<option value="227900000" data-img="https://upload.wikimedia.org/wikipedia/commons/0/02/OSIRIS_Mars_true_color.jpg">화성</option>
-<option value="778500000" data-img="https://upload.wikimedia.org/wikipedia/commons/e/e2/Jupiter.jpg">목성</option>
-<option value="1433000000" data-img="https://upload.wikimedia.org/wikipedia/commons/c/c7/Saturn_during_Equinox.jpg">토성</option>
-<option value="2871000000" data-img="https://upload.wikimedia.org/wikipedia/commons/3/3d/Uranus2.jpg">천왕성</option>
-<option value="4495000000" data-img="https://upload.wikimedia.org/wikipedia/commons/5/56/Neptune_Full.jpg">해왕성</option>
-</select>
-
-<br>
-<label>⏱️ 시간 가속: <span id="speedValue">1x</span></label><br>
-<input type="range" id="speed" min="1" max="20" value="1" oninput="updateSpeed()">
-
-<br>
-<button onclick="startRace()">출발 🚀</button>
-
-<div class="track">🚶<img id="walk" class="icon" src="https://cdn-icons-png.flaticon.com/512/1995/1995574.png"></div>
-<div class="track">🚗<img id="car" class="icon" src="https://cdn-icons-png.flaticon.com/512/744/744465.png"></div>
-<div class="track">✈️<img id="plane" class="icon" src="https://cdn-icons-png.flaticon.com/512/190/190601.png"></div>
-<div class="track">⚡<img id="light" class="icon" src="https://cdn-icons-png.flaticon.com/512/3212/3212608.png"></div>
-
-</div>
-
-<div class="right">
-<img id="planetImg" class="planet-img" src="https://upload.wikimedia.org/wikipedia/commons/9/97/The_Earth_seen_from_Apollo_17.jpg">
-</div>
-
-</div>
+  <audio id="engineSound" loop>
+    <source src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_115b9b5c82.mp3?filename=engine-5936.mp3" type="audio/mpeg">
+  </audio>
 
 <script>
-let speedFactor = 1;
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const sound = document.getElementById('engineSound');
 
-function updatePlanet() {
-    const select = document.getElementById('planet');
-    const img = select.options[select.selectedIndex].getAttribute('data-img');
-    document.getElementById('planetImg').src = img;
+let running = false;
+let angle = 0;
+let cylinders = 4;
+
+const types = [6,8,10,12];
+let typeIndex = -1;
+
+function toggleEngine(){
+  running = !running;
+  if(running) sound.play(); else sound.pause();
 }
 
-function updateSpeed() {
-    speedFactor = document.getElementById('speed').value;
-    document.getElementById('speedValue').innerText = speedFactor + "x";
+function addCylinder(){
+  typeIndex++;
+  if(typeIndex >= types.length) typeIndex = 0;
+  cylinders = types[typeIndex];
+  document.getElementById('engineType').innerText = `V${cylinders} 엔진`;
 }
 
-function startRace() {
-    const distance = document.getElementById('planet').value;
+function drawPiston(xBase, yBase, offsetAngle){
+  let a = angle + offsetAngle;
+  let crankRadius = 30;
+  let rodLength = 80;
 
-    const walk = distance / 5;
-    const car = distance / 100;
-    const plane = distance / 900;
-    const light = distance / 1079252848.8;
+  let crankX = 250 + Math.cos(a) * crankRadius;
+  let crankY = 200 + Math.sin(a) * crankRadius;
 
-    const max = Math.max(walk, car, plane, light);
+  let pistonY = yBase + Math.sin(a) * 30;
 
-    const baseTime = 6; // 기본 애니메이션 시간(초)
-    const duration = baseTime / speedFactor;
+  // 크랭크
+  ctx.beginPath();
+  ctx.moveTo(250,200);
+  ctx.lineTo(crankX,crankY);
+  ctx.stroke();
 
-    ["walk","car","plane","light"].forEach(id => {
-        document.getElementById(id).style.transition = `left ${duration}s linear`;
-        document.getElementById(id).style.left = "0%";
-    });
+  // 커넥팅 로드
+  ctx.beginPath();
+  ctx.moveTo(crankX,crankY);
+  ctx.lineTo(xBase,pistonY);
+  ctx.stroke();
 
-    setTimeout(() => {
-        document.getElementById('walk').style.left = (walk/max*90) + "%";
-        document.getElementById('car').style.left = (car/max*90) + "%";
-        document.getElementById('plane').style.left = (plane/max*90) + "%";
-        document.getElementById('light').style.left = (light/max*90) + "%";
-    }, 50);
+  // 피스톤
+  ctx.fillRect(xBase-15,pistonY-15,30,30);
 }
+
+function draw(){
+  ctx.clearRect(0,0,500,350);
+
+  // 크랭크축
+  ctx.beginPath();
+  ctx.arc(250,200,30,0,Math.PI*2);
+  ctx.stroke();
+
+  let bankAngle = Math.PI/6; // V각도
+
+  for(let i=0;i<cylinders;i++){
+    let side = i % 2 === 0 ? -1 : 1;
+    let index = Math.floor(i/2);
+
+    let x = 250 + side * 120;
+    let y = 80 + index * 40;
+
+    drawPiston(x, y, (i * Math.PI*2)/cylinders);
+  }
+
+  if(running) angle += 0.08;
+  requestAnimationFrame(draw);
+}
+
+draw();
 </script>
-
 </body>
 </html>
