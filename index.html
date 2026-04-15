@@ -4,18 +4,13 @@
 <meta charset="UTF-8">
 <title>행성 이동 시간 시뮬레이터</title>
 <style>
-body { font-family: Arial; background: #0b0f2a; color: white; margin:0; }
+body { font-family: Arial; background: #0b0f2a; color: white; margin:0; overflow:hidden; }
 .container { display: flex; height: 100vh; }
 .left { width: 50%; padding: 20px; }
 .right { width: 50%; display:flex; justify-content:center; align-items:center; }
-select, button { padding: 10px; margin: 10px; font-size: 16px; }
-.item { margin: 20px 0; }
-.bar { height: 30px; background: #222; border-radius: 20px; overflow: hidden; }
-.fill { height: 100%; width: 0%; display:flex; align-items:center; padding-left:10px; transition: width 2s ease; }
-.walk { background: #4caf50; }
-.car { background: #2196f3; }
-.plane { background: #ff9800; }
-.light { background: #e91e63; }
+select, button, input { padding: 10px; margin: 10px; font-size: 16px; }
+.track { position: relative; height: 60px; margin: 20px 0; background: #111; border-radius: 30px; }
+.icon { position: absolute; top: 10px; width: 40px; left:0; }
 .planet-img { width: 300px; }
 </style>
 </head>
@@ -23,7 +18,7 @@ select, button { padding: 10px; margin: 10px; font-size: 16px; }
 <div class="container">
 
 <div class="left">
-<h2>🚀 이동 시간 (애니메이션)</h2>
+<h2>🚀 이동 애니메이션</h2>
 
 <select id="planet" onchange="updatePlanet()">
 <option value="57900000" data-img="https://upload.wikimedia.org/wikipedia/commons/4/4a/Mercury_in_true_color.jpg">수성</option>
@@ -36,14 +31,18 @@ select, button { padding: 10px; margin: 10px; font-size: 16px; }
 <option value="4495000000" data-img="https://upload.wikimedia.org/wikipedia/commons/5/56/Neptune_Full.jpg">해왕성</option>
 </select>
 
-<button onclick="calculate()">출발 🚀</button>
+<br>
+<label>⏱️ 시간 가속: <span id="speedValue">1x</span></label><br>
+<input type="range" id="speed" min="1" max="20" value="1" oninput="updateSpeed()">
 
-<div id="result">
-<div class="item">🚶 걷기<div class="bar"><div id="walkBar" class="fill walk"></div></div></div>
-<div class="item">🚗 자동차<div class="bar"><div id="carBar" class="fill car"></div></div></div>
-<div class="item">✈️ 비행기<div class="bar"><div id="planeBar" class="fill plane"></div></div></div>
-<div class="item">⚡ 광속<div class="bar"><div id="lightBar" class="fill light"></div></div></div>
-</div>
+<br>
+<button onclick="startRace()">출발 🚀</button>
+
+<div class="track">🚶<img id="walk" class="icon" src="https://cdn-icons-png.flaticon.com/512/1995/1995574.png"></div>
+<div class="track">🚗<img id="car" class="icon" src="https://cdn-icons-png.flaticon.com/512/744/744465.png"></div>
+<div class="track">✈️<img id="plane" class="icon" src="https://cdn-icons-png.flaticon.com/512/190/190601.png"></div>
+<div class="track">⚡<img id="light" class="icon" src="https://cdn-icons-png.flaticon.com/512/3212/3212608.png"></div>
+
 </div>
 
 <div class="right">
@@ -53,11 +52,7 @@ select, button { padding: 10px; margin: 10px; font-size: 16px; }
 </div>
 
 <script>
-function formatTime(hours) {
-    let years = Math.floor(hours / (24 * 365));
-    let days = Math.floor((hours % (24 * 365)) / 24);
-    return `${years}년 ${days}일`;
-}
+let speedFactor = 1;
 
 function updatePlanet() {
     const select = document.getElementById('planet');
@@ -65,7 +60,12 @@ function updatePlanet() {
     document.getElementById('planetImg').src = img;
 }
 
-function calculate() {
+function updateSpeed() {
+    speedFactor = document.getElementById('speed').value;
+    document.getElementById('speedValue').innerText = speedFactor + "x";
+}
+
+function startRace() {
     const distance = document.getElementById('planet').value;
 
     const walk = distance / 5;
@@ -75,15 +75,20 @@ function calculate() {
 
     const max = Math.max(walk, car, plane, light);
 
-    document.getElementById('walkBar').style.width = (walk/max*100) + "%";
-    document.getElementById('carBar').style.width = (car/max*100) + "%";
-    document.getElementById('planeBar').style.width = (plane/max*100) + "%";
-    document.getElementById('lightBar').style.width = (light/max*100) + "%";
+    const baseTime = 6; // 기본 애니메이션 시간(초)
+    const duration = baseTime / speedFactor;
 
-    document.getElementById('walkBar').innerText = formatTime(walk);
-    document.getElementById('carBar').innerText = formatTime(car);
-    document.getElementById('planeBar').innerText = formatTime(plane);
-    document.getElementById('lightBar').innerText = light.toFixed(6) + "시간";
+    ["walk","car","plane","light"].forEach(id => {
+        document.getElementById(id).style.transition = `left ${duration}s linear`;
+        document.getElementById(id).style.left = "0%";
+    });
+
+    setTimeout(() => {
+        document.getElementById('walk').style.left = (walk/max*90) + "%";
+        document.getElementById('car').style.left = (car/max*90) + "%";
+        document.getElementById('plane').style.left = (plane/max*90) + "%";
+        document.getElementById('light').style.left = (light/max*90) + "%";
+    }, 50);
 }
 </script>
 
