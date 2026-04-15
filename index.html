@@ -2,106 +2,110 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>엔진 시뮬레이터</title>
+<title>리얼 엔진 시뮬레이터</title>
 <style>
-body {
-  margin:0;
-  background:#f0f0f0;
-  font-family:sans-serif;
-  text-align:center;
-}
-canvas {
-  background:#e5e5e5;
-  margin-top:20px;
-  border-radius:12px;
-}
-.controls {
-  margin-top:15px;
-}
-button {
-  padding:10px 15px;
-  margin:5px;
-  border:none;
-  border-radius:8px;
-  background:#333;
-  color:white;
-  cursor:pointer;
-}
-button:hover { background:#555; }
+body{margin:0;background:#dcdcdc;font-family:sans-serif;text-align:center}
+canvas{background:#efefef;margin-top:20px;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,0.2)}
+.controls{margin-top:15px}
+button{padding:10px 15px;margin:5px;border:none;border-radius:10px;background:#222;color:#fff;cursor:pointer}
+button:hover{background:#444}
 </style>
 </head>
 <body>
-
 <h2 id="engineType">V6 엔진</h2>
-<canvas id="engineCanvas" width="800" height="400"></canvas>
-
+<canvas id="c" width="900" height="450"></canvas>
 <div class="controls">
-  <button onclick="changeCyl(-1)">- 기통</button>
-  <button onclick="changeCyl(1)">+ 기통</button>
-  <br>
-  RPM: <span id="rpmVal">1</span>
-  <input type="range" min="1" max="10" value="1" id="rpmSlider">
+<button onclick="change(-1)">- 기통</button>
+<button onclick="change(1)">+ 기통</button><br>
+RPM: <span id="rpmVal">1</span>
+<input type="range" min="1" max="10" value="1" id="rpm">
 </div>
-
 <script>
-const canvas = document.getElementById('engineCanvas');
-const ctx = canvas.getContext('2d');
+const canvas=document.getElementById('c');
+const ctx=canvas.getContext('2d');
 
-let types = [6,8,10,12];
-let index = 0;
-let rpm = 1;
-let angle = 0;
+const types=[6,8,10,12];
+let idx=0, rpm=1, t=0;
 
-const slider = document.getElementById('rpmSlider');
-slider.oninput = () => {
-  rpm = slider.value;
-  document.getElementById('rpmVal').innerText = rpm;
+const firingOrders={
+6:[0,3,1,4,2,5],
+8:[0,5,4,7,2,3,6,1],
+10:[0,5,2,7,4,9,6,1,8,3],
+12:[0,7,4,11,2,9,6,1,8,3,10,5]
 };
 
-function changeCyl(dir){
-  index += dir;
-  if(index < 0) index = types.length-1;
-  if(index >= types.length) index = 0;
-  document.getElementById('engineType').innerText = "V" + types[index] + " 엔진";
+rpm.oninput=e=>{rpm=e.target.value;rpmVal.innerText=rpm};
+
+function change(d){idx=(idx+d+types.length)%types.length;engineType.innerText='V'+types[idx]+' 엔진'}
+
+function drawCylinder(x,y,angle,phase){
+ const stroke=80;
+ const r=40;
+ const crankY=320;
+ const pistonY=y+Math.sin(t+phase)*stroke;
+
+ // 로드
+ ctx.strokeStyle='#777';
+ ctx.lineWidth=6;
+ ctx.beginPath();
+ ctx.moveTo(x,pistonY);
+ ctx.lineTo(x+Math.cos(angle)*30,crankY);
+ ctx.stroke();
+
+ // 피스톤 (입체 느낌)
+ const grd=ctx.createLinearGradient(x-20,pistonY,x+20,pistonY+40);
+ grd.addColorStop(0,'#fff');
+ grd.addColorStop(1,'#aaa');
+ ctx.fillStyle=grd;
+ ctx.fillRect(x-20,pistonY-20,40,40);
+
+ // 상단 캡
+ ctx.fillStyle='#ddd';
+ ctx.beginPath();
+ ctx.arc(x,pistonY-20,20,0,Math.PI);
+ ctx.fill();
 }
 
 function draw(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  
-  let cyl = types[index];
-  let spacing = 80;
-  let startX = canvas.width/2 - (cyl/2 * spacing)/2;
-  
-  for(let i=0;i<cyl;i++){
-    let phase = (i % 2 === 0) ? 0 : Math.PI;
-    let y = 200 + Math.sin(angle + phase) * 40;
-    let x = startX + i * spacing;
-    
-    // 피스톤
-    ctx.fillStyle = '#c0c0c0';
-    ctx.fillRect(x, y, 40, 60);
-    
-    // 커넥팅로드
-    ctx.strokeStyle = '#888';
-    ctx.beginPath();
-    ctx.moveTo(x+20, y+60);
-    ctx.lineTo(x+20, 300);
-    ctx.stroke();
-  }
-  
-  // 크랭크축
-  ctx.fillStyle = '#666';
-  ctx.fillRect(0,300,800,20);
+ ctx.clearRect(0,0,900,450);
+
+ const cyl=types[idx];
+ const order=firingOrders[cyl];
+ const spacing=60;
+ const start=450-(cyl/2*spacing)/2;
+ const vAngle=Math.PI/6;
+
+ // 크랭크축
+ ctx.fillStyle='#555';
+ ctx.fillRect(0,310,900,25);
+
+ for(let i=0;i<cyl;i++){
+  const row=i%2===0?-1:1;
+  const angle=row*vAngle;
+  const x=start+i*spacing;
+  const y=200+row*60;
+  const phase=(order.indexOf(i)/cyl)*Math.PI*2;
+  drawCylinder(x,y,angle,phase);
+ }
+
+ // 크랭크 회전 표시
+ ctx.fillStyle='#333';
+ ctx.beginPath();
+ ctx.arc(450,322,20,0,Math.PI*2);
+ ctx.fill();
+ ctx.strokeStyle='#999';
+ ctx.beginPath();
+ ctx.moveTo(450,322);
+ ctx.lineTo(450+Math.cos(t)*20,322+Math.sin(t)*20);
+ ctx.stroke();
 }
 
-function animate(){
-  angle += 0.05 * rpm;
-  draw();
-  requestAnimationFrame(animate);
+function loop(){
+ t+=0.05*rpm;
+ draw();
+ requestAnimationFrame(loop);
 }
-
-animate();
+loop();
 </script>
-
 </body>
 </html>
