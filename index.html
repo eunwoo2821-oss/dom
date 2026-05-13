@@ -1,556 +1,396 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>케플러 방정식 거리 계산기</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <style>
-    * {
-      box-sizing: border-box;
-    }
+<title>실제 케플러 운동 시뮬레이터</title>
 
-    body {
-      margin: 0;
-      background: #020617;
-      color: #e5e7eb;
-      font-family: Arial, sans-serif;
-    }
+<style>
+*{
+  box-sizing:border-box;
+}
 
-    header {
-      padding: 22px 24px;
-      border-bottom: 1px solid rgba(148, 163, 184, 0.25);
-      background: linear-gradient(135deg, #0f172a, #020617);
-    }
+body{
+  margin:0;
+  background:#020617;
+  color:white;
+  font-family:Arial;
+}
 
-    header h1 {
-      margin: 0 0 8px;
-      font-size: 26px;
-    }
+header{
+  padding:20px;
+  border-bottom:1px solid rgba(255,255,255,0.1);
+}
 
-    header p {
-      margin: 0;
-      color: #cbd5e1;
-      line-height: 1.5;
-      font-size: 14px;
-    }
+h1{
+  margin:0;
+}
 
-    main {
-      display: grid;
-      grid-template-columns: 390px 1fr;
-      gap: 18px;
-      padding: 18px;
-      min-height: calc(100vh - 110px);
-    }
+main{
+  display:grid;
+  grid-template-columns:350px 1fr;
+  gap:16px;
+  padding:16px;
+}
 
-    .card {
-      background: rgba(15, 23, 42, 0.92);
-      border: 1px solid rgba(148, 163, 184, 0.25);
-      border-radius: 16px;
-      padding: 16px;
-      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
-    }
+.card{
+  background:#0f172a;
+  border-radius:16px;
+  padding:16px;
+}
 
-    .card h2 {
-      margin: 0 0 14px;
-      font-size: 18px;
-      color: white;
-    }
+input{
+  width:100%;
+  margin-top:8px;
+  margin-bottom:12px;
+  padding:10px;
+  border-radius:10px;
+  border:none;
+  background:#020617;
+  color:white;
+}
 
-    label {
-      display: block;
-      margin-top: 12px;
-      font-size: 14px;
-      color: #dbeafe;
-    }
+button{
+  width:100%;
+  padding:10px;
+  border:none;
+  border-radius:10px;
+  background:#2563eb;
+  color:white;
+  cursor:pointer;
+}
 
-    input {
-      width: 100%;
-      margin-top: 6px;
-      padding: 10px;
-      border-radius: 10px;
-      border: 1px solid rgba(148, 163, 184, 0.35);
-      background: #020617;
-      color: white;
-      font-size: 15px;
-    }
+canvas{
+  width:100%;
+  height:600px;
+  background:black;
+  border-radius:16px;
+}
 
-    input:focus {
-      outline: 2px solid #2563eb;
-      border-color: #2563eb;
-    }
-
-    .hint {
-      margin-top: 4px;
-      font-size: 12px;
-      color: #94a3b8;
-      line-height: 1.4;
-    }
-
-    button {
-      width: 100%;
-      margin-top: 14px;
-      padding: 11px;
-      border: none;
-      border-radius: 12px;
-      background: #2563eb;
-      color: white;
-      font-weight: bold;
-      font-size: 15px;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background: #1d4ed8;
-    }
-
-    .preset-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin-top: 10px;
-    }
-
-    .preset-row button {
-      margin-top: 0;
-      background: #334155;
-      font-size: 13px;
-      padding: 9px;
-    }
-
-    .preset-row button:hover {
-      background: #475569;
-    }
-
-    .formula {
-      margin-top: 14px;
-      padding: 12px;
-      background: rgba(30, 41, 59, 0.8);
-      border-radius: 12px;
-      line-height: 1.7;
-      font-size: 14px;
-      color: #bfdbfe;
-    }
-
-    .result-box {
-      margin-top: 14px;
-      padding: 12px;
-      background: #020617;
-      border-radius: 12px;
-      border: 1px solid rgba(148, 163, 184, 0.25);
-      line-height: 1.8;
-      font-size: 14px;
-    }
-
-    .result-box b {
-      color: #93c5fd;
-    }
-
-    .warning {
-      margin-top: 10px;
-      color: #fca5a5;
-      font-size: 13px;
-      line-height: 1.5;
-      display: none;
-    }
-
-    .right-grid {
-      display: grid;
-      grid-template-rows: auto 1fr;
-      gap: 18px;
-    }
-
-    canvas {
-      width: 100%;
-      height: 430px;
-      display: block;
-      background: radial-gradient(circle at center, #111827 0%, #020617 68%);
-      border-radius: 16px;
-      border: 1px solid rgba(148, 163, 184, 0.25);
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 8px;
-      font-size: 14px;
-    }
-
-    th, td {
-      padding: 9px;
-      border-bottom: 1px solid rgba(148, 163, 184, 0.22);
-      text-align: left;
-    }
-
-    th {
-      color: #bfdbfe;
-      font-weight: bold;
-    }
-
-    .small {
-      color: #94a3b8;
-      font-size: 13px;
-      line-height: 1.5;
-      margin-top: 8px;
-    }
-
-    @media (max-width: 900px) {
-      main {
-        grid-template-columns: 1fr;
-      }
-
-      canvas {
-        height: 340px;
-      }
-    }
-  </style>
+.result{
+  margin-top:16px;
+  line-height:1.8;
+}
+</style>
 </head>
 
 <body>
-  <header>
-    <h1>케플러 방정식 거리 계산기</h1>
-    <p>
-      평균 근점 이각 M, 이심률 e, 긴반지름 a를 입력하면 케플러 방정식으로 E를 근사 계산하고,
-      항성-행성 거리 r을 구합니다.
-    </p>
-  </header>
 
-  <main>
-    <section class="card">
-      <h2>입력값</h2>
+<header>
+  <h1>케플러 운동 시뮬레이터</h1>
+</header>
 
-      <label>
-        긴반지름 a
-        <input id="aInput" type="number" value="100" min="1" step="1" />
-      </label>
-      <div class="hint">단위는 자유롭게 정할 수 있음. 예: AU, km, px</div>
+<main>
 
-      <label>
-        이심률 e
-        <input id="eInput" type="number" value="0.5" min="0" max="0.99" step="0.01" />
-      </label>
-      <div class="hint">0이면 원 궤도, 1에 가까울수록 긴 타원</div>
+<section class="card">
 
-      <label>
-        평균 근점 이각 M, degree
-        <input id="mInput" type="number" value="60" step="1" />
-      </label>
-      <div class="hint">0°는 근일점, 180°는 원일점 근처</div>
+<label>긴반지름 a</label>
+<input id="aInput" type="number" value="200">
 
-      <button id="calcBtn">계산하기</button>
+<label>이심률 e</label>
+<input id="eInput" type="number" value="0.6" step="0.01">
 
-      <div class="preset-row">
-        <button onclick="setPreset(100, 0.0, 60)">원 궤도</button>
-        <button onclick="setPreset(100, 0.3, 60)">약한 타원</button>
-        <button onclick="setPreset(100, 0.6, 60)">긴 타원</button>
-        <button onclick="setPreset(100, 0.8, 60)">매우 긴 타원</button>
-      </div>
+<label>평균 근점 이각 M</label>
+<input id="mInput" type="number" value="0">
 
-      <div id="warning" class="warning"></div>
+<button id="toggleBtn">일시정지</button>
 
-      <div class="formula">
-        <b>사용한 식</b><br>
-        케플러 방정식: M = E - e sin(E)<br>
-        거리 계산식: r = a(1 - e cos(E))<br>
-        근일점 거리: r<sub>min</sub> = a(1 - e)<br>
-        원일점 거리: r<sub>max</sub> = a(1 + e)
-      </div>
+<div class="result" id="result"></div>
 
-      <div id="result" class="result-box">
-        아직 계산하지 않았습니다.
-      </div>
-    </section>
+</section>
 
-    <section class="right-grid">
-      <section class="card">
-        <h2>보조 궤도 그림</h2>
-        <canvas id="orbitCanvas"></canvas>
-        <div class="small">
-          이 그림은 계산 결과를 이해하기 위한 보조 도구입니다. 핵심 도구는 왼쪽 계산기입니다.
-        </div>
-      </section>
+<section class="card">
+  <canvas id="canvas"></canvas>
+</section>
 
-      <section class="card">
-        <h2>비교표</h2>
-        <div class="small">
-          같은 a, e에서 M 값만 바꾸면 거리가 어떻게 변하는지 비교합니다.
-        </div>
-        <table>
-          <thead>
-            <tr>
-              <th>M</th>
-              <th>E</th>
-              <th>거리 r</th>
-              <th>의미</th>
-            </tr>
-          </thead>
-          <tbody id="compareTable"></tbody>
-        </table>
-      </section>
-    </section>
-  </main>
+</main>
 
-  <script>
-    const aInput = document.getElementById("aInput");
-    const eInput = document.getElementById("eInput");
-    const mInput = document.getElementById("mInput");
-    const calcBtn = document.getElementById("calcBtn");
-    const result = document.getElementById("result");
-    const warning = document.getElementById("warning");
-    const compareTable = document.getElementById("compareTable");
+<script>
 
-    const canvas = document.getElementById("orbitCanvas");
-    const ctx = canvas.getContext("2d");
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
 
-    function degreeToRadian(deg) {
-      return deg * Math.PI / 180;
+const aInput = document.getElementById("aInput");
+const eInput = document.getElementById("eInput");
+const mInput = document.getElementById("mInput");
+
+const result = document.getElementById("result");
+
+const toggleBtn = document.getElementById("toggleBtn");
+
+let playing = true;
+
+toggleBtn.onclick = () => {
+  playing = !playing;
+  toggleBtn.textContent = playing ? "일시정지" : "재생";
+};
+
+function degToRad(deg){
+  return deg * Math.PI / 180;
+}
+
+function radToDeg(rad){
+  return rad * 180 / Math.PI;
+}
+
+function normalize(rad){
+  const t = Math.PI * 2;
+  return ((rad % t) + t) % t;
+}
+
+/*
+  케플러 방정식:
+  M = E - e sin(E)
+
+  뉴턴-랩슨 방법으로 풂
+*/
+
+function solveKepler(M,e){
+
+  M = normalize(M);
+
+  let E = e < 0.8 ? M : Math.PI;
+
+  let iterations = 0;
+
+  for(let i=0;i<100;i++){
+
+    const f = E - e*Math.sin(E) - M;
+
+    const fp = 1 - e*Math.cos(E);
+
+    if(Math.abs(fp) < 1e-12){
+      break;
     }
 
-    function radianToDegree(rad) {
-      return rad * 180 / Math.PI;
+    const dE = f / fp;
+
+    E -= dE;
+
+    iterations++;
+
+    if(Math.abs(dE) < 1e-12){
+      break;
     }
+  }
 
-    function normalizeRadian(rad) {
-      const twoPi = Math.PI * 2;
-      return ((rad % twoPi) + twoPi) % twoPi;
-    }
+  return {
+    E,
+    iterations
+  };
+}
 
-    function solveKepler(M, e) {
-      M = normalizeRadian(M);
+function calculate(a,e,Mdeg){
 
-      let E = e < 0.8 ? M : Math.PI;
+  const M = degToRad(Mdeg);
 
-      for (let i = 0; i < 30; i++) {
-        const f = E - e * Math.sin(E) - M;
-        const fp = 1 - e * Math.cos(E);
+  const solved = solveKepler(M,e);
 
-        const nextE = E - f / fp;
+  const E = solved.E;
 
-        if (Math.abs(nextE - E) < 1e-12) {
-          E = nextE;
-          break;
-        }
+  /*
+    실제 케플러 거리식
+    r = a(1 - e cos(E))
+  */
 
-        E = nextE;
-      }
+  const r = a * (1 - e*Math.cos(E));
 
-      return E;
-    }
+  /*
+    진근점이각 ν
+  */
 
-    function calculateDistance(a, e, Mdeg) {
-      const M = degreeToRadian(Mdeg);
-      const normalizedM = normalizeRadian(M);
+  const trueAnomaly = 2 * Math.atan2(
+    Math.sqrt(1+e) * Math.sin(E/2),
+    Math.sqrt(1-e) * Math.cos(E/2)
+  );
 
-      const E = solveKepler(normalizedM, e);
-      const r = a * (1 - e * Math.cos(E));
+  return {
+    M,
+    E,
+    Edeg:radToDeg(E),
 
-      const rMin = a * (1 - e);
-      const rMax = a * (1 + e);
+    r,
 
-      return {
-        M: normalizedM,
-        Mdeg: radianToDegree(normalizedM),
-        E,
-        Edeg: radianToDegree(E),
-        r,
-        rMin,
-        rMax,
-        range: rMax - rMin
-      };
-    }
+    trueAnomaly,
+    trueAnomalyDeg:radToDeg(trueAnomaly),
 
-    function validateInput(a, e, Mdeg) {
-      if (!Number.isFinite(a) || a <= 0) {
-        return "긴반지름 a는 0보다 큰 수여야 합니다.";
-      }
+    iterations:solved.iterations
+  };
+}
 
-      if (!Number.isFinite(e) || e < 0 || e >= 1) {
-        return "이심률 e는 0 이상 1 미만이어야 합니다.";
-      }
+function resizeCanvas(){
 
-      if (!Number.isFinite(Mdeg)) {
-        return "평균 근점 이각 M은 숫자여야 합니다.";
-      }
+  const rect = canvas.getBoundingClientRect();
 
-      return "";
-    }
+  canvas.width = rect.width;
+  canvas.height = rect.height;
+}
 
-    function drawOrbit(a, e, calc) {
-      const rect = canvas.getBoundingClientRect();
-      const dpr = window.devicePixelRatio || 1;
+function draw(calc,a,e){
 
-      canvas.width = rect.width * dpr;
-      canvas.height = rect.height * dpr;
+  resizeCanvas();
 
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const w = canvas.width;
+  const h = canvas.height;
 
-      const w = rect.width;
-      const h = rect.height;
+  ctx.clearRect(0,0,w,h);
 
-      ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = "black";
+  ctx.fillRect(0,0,w,h);
 
-      ctx.fillStyle = "#020617";
-      ctx.fillRect(0, 0, w, h);
+  const cx = w/2;
+  const cy = h/2;
 
-      for (let i = 0; i < 80; i++) {
-        const x = (i * 71) % w;
-        const y = (i * 137) % h;
-        const size = 0.5 + (i % 3) * 0.25;
+  const scale = 1.6;
 
-        ctx.fillStyle = "rgba(255,255,255,0.65)";
-        ctx.beginPath();
-        ctx.arc(x, y, size, 0, Math.PI * 2);
-        ctx.fill();
-      }
+  const drawA = a * scale;
 
-      const margin = 55;
-      const scale = Math.min((w - margin * 2) / (2 * a), (h - margin * 2) / (2 * a));
-      const drawA = a * scale;
-      const drawB = a * Math.sqrt(1 - e * e) * scale;
+  const drawB = a * Math.sqrt(1-e*e) * scale;
 
-      const cx = w / 2;
-      const cy = h / 2;
+  /*
+    항성 위치
+  */
 
-      const starX = cx - drawA * e;
-      const starY = cy;
+  const starX = cx - drawA*e;
+  const starY = cy;
 
-      const x = drawA * (Math.cos(calc.E) - e);
-      const y = drawB * Math.sin(calc.E);
+  /*
+    케플러 위치 계산
+  */
 
-      const planetX = cx + x;
-      const planetY = cy + y;
+  const x = drawA * (Math.cos(calc.E)-e);
 
-      ctx.strokeStyle = "rgba(147,197,253,0.9)";
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.ellipse(cx, cy, drawA, drawB, 0, 0, Math.PI * 2);
-      ctx.stroke();
+  const y = drawB * Math.sin(calc.E);
 
-      ctx.strokeStyle = "rgba(255,255,255,0.22)";
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(cx - drawA, cy);
-      ctx.lineTo(cx + drawA, cy);
-      ctx.stroke();
+  const px = cx + x;
+  const py = cy + y;
 
-      ctx.setLineDash([6, 6]);
-      ctx.strokeStyle = "rgba(255,255,255,0.65)";
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.moveTo(starX, starY);
-      ctx.lineTo(planetX, planetY);
-      ctx.stroke();
-      ctx.setLineDash([]);
+  /*
+    궤도
+  */
 
-      const starGradient = ctx.createRadialGradient(starX, starY, 0, starX, starY, 28);
-      starGradient.addColorStop(0, "#ffffff");
-      starGradient.addColorStop(0.35, "#fde68a");
-      starGradient.addColorStop(1, "rgba(250,204,21,0)");
+  ctx.strokeStyle = "#60a5fa";
+  ctx.lineWidth = 2;
 
-      ctx.fillStyle = starGradient;
-      ctx.beginPath();
-      ctx.arc(starX, starY, 28, 0, Math.PI * 2);
-      ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(cx,cy,drawA,drawB,0,0,Math.PI*2);
+  ctx.stroke();
 
-      ctx.fillStyle = "#facc15";
-      ctx.beginPath();
-      ctx.arc(starX, starY, 8, 0, Math.PI * 2);
-      ctx.fill();
+  /*
+    거리선
+  */
 
-      ctx.fillStyle = "#60a5fa";
-      ctx.beginPath();
-      ctx.arc(planetX, planetY, 8, 0, Math.PI * 2);
-      ctx.fill();
+  ctx.strokeStyle = "rgba(255,255,255,0.5)";
+  ctx.setLineDash([5,5]);
 
-      ctx.strokeStyle = "white";
-      ctx.lineWidth = 1.2;
-      ctx.beginPath();
-      ctx.arc(planetX, planetY, 8, 0, Math.PI * 2);
-      ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(starX,starY);
+  ctx.lineTo(px,py);
+  ctx.stroke();
 
-      ctx.fillStyle = "white";
-      ctx.font = "13px Arial";
-      ctx.fillText("항성", starX + 12, starY - 12);
-      ctx.fillText("행성", planetX + 12, planetY - 12);
+  ctx.setLineDash([]);
 
-      ctx.fillStyle = "#bfdbfe";
-      ctx.fillText(`r = ${calc.r.toFixed(3)}`, (starX + planetX) / 2 + 8, (starY + planetY) / 2 - 8);
+  /*
+    항성
+  */
 
-      ctx.fillStyle = "rgba(255,255,255,0.6)";
-      ctx.beginPath();
-      ctx.arc(cx, cy, 3, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillText("타원 중심", cx + 8, cy + 18);
-    }
+  const gradient = ctx.createRadialGradient(
+    starX,starY,0,
+    starX,starY,30
+  );
 
-    function updateCompareTable(a, e) {
-      const rows = [
-        { m: 0, meaning: "근일점, 가장 가까움" },
-        { m: 90, meaning: "중간 구간" },
-        { m: 180, meaning: "원일점, 가장 멂" },
-        { m: 270, meaning: "다시 중간 구간" }
-      ];
+  gradient.addColorStop(0,"white");
+  gradient.addColorStop(0.4,"yellow");
+  gradient.addColorStop(1,"rgba(255,255,0,0)");
 
-      compareTable.innerHTML = "";
+  ctx.fillStyle = gradient;
 
-      for (const row of rows) {
-        const calc = calculateDistance(a, e, row.m);
+  ctx.beginPath();
+  ctx.arc(starX,starY,30,0,Math.PI*2);
+  ctx.fill();
 
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${row.m}°</td>
-          <td>${calc.Edeg.toFixed(3)}°</td>
-          <td>${calc.r.toFixed(3)}</td>
-          <td>${row.meaning}</td>
-        `;
+  ctx.fillStyle = "yellow";
 
-        compareTable.appendChild(tr);
-      }
-    }
+  ctx.beginPath();
+  ctx.arc(starX,starY,8,0,Math.PI*2);
+  ctx.fill();
 
-    function calculateAndRender() {
-      const a = Number(aInput.value);
-      const e = Number(eInput.value);
-      const Mdeg = Number(mInput.value);
+  /*
+    행성
+  */
 
-      const error = validateInput(a, e, Mdeg);
+  ctx.fillStyle = "#60a5fa";
 
-      if (error) {
-        warning.style.display = "block";
-        warning.textContent = error;
-        return;
-      }
+  ctx.beginPath();
+  ctx.arc(px,py,8,0,Math.PI*2);
+  ctx.fill();
 
-      warning.style.display = "none";
-      warning.textContent = "";
+  /*
+    텍스트
+  */
 
-      const calc = calculateDistance(a, e, Mdeg);
+  ctx.fillStyle = "white";
 
-      result.innerHTML = `
-        입력한 M = <b>${Mdeg.toFixed(3)}°</b><br>
-        정규화된 M = <b>${calc.Mdeg.toFixed(3)}°</b> = ${calc.M.toFixed(6)} rad<br>
-        계산된 E = <b>${calc.Edeg.toFixed(3)}°</b> = ${calc.E.toFixed(6)} rad<br>
-        현재 항성-행성 거리 r = <b>${calc.r.toFixed(6)}</b><br>
-        근일점 거리 r<sub>min</sub> = ${calc.rMin.toFixed(6)}<br>
-        원일점 거리 r<sub>max</sub> = ${calc.rMax.toFixed(6)}<br>
-        거리 변화폭 = ${calc.range.toFixed(6)}
-      `;
+  ctx.font = "16px Arial";
 
-      drawOrbit(a, e, calc);
-      updateCompareTable(a, e);
-    }
+  ctx.fillText(
+    "r = " + calc.r.toFixed(2),
+    (starX+px)/2,
+    (starY+py)/2
+  );
 
-    function setPreset(a, e, m) {
-      aInput.value = a;
-      eInput.value = e;
-      mInput.value = m;
-      calculateAndRender();
-    }
+}
 
-    calcBtn.addEventListener("click", calculateAndRender);
-    window.addEventListener("resize", calculateAndRender);
+function update(){
 
-    calculateAndRender();
-  </script>
+  const a = Number(aInput.value);
+
+  const e = Number(eInput.value);
+
+  const Mdeg = Number(mInput.value);
+
+  const calc = calculate(a,e,Mdeg);
+
+  draw(calc,a,e);
+
+  result.innerHTML = `
+    평균 근점 이각 M = ${Mdeg.toFixed(2)}°<br>
+    이심 근점 이각 E = ${calc.Edeg.toFixed(2)}°<br>
+    진근점 이각 ν = ${calc.trueAnomalyDeg.toFixed(2)}°<br>
+    현재 거리 r = ${calc.r.toFixed(3)}<br>
+    뉴턴 반복 횟수 = ${calc.iterations}
+  `;
+}
+
+let animationM = 0;
+
+function animate(){
+
+  if(playing){
+
+    /*
+      M은 시간에 비례하여 일정 증가
+      실제 위치는 케플러 방정식으로 계산
+    */
+
+    animationM += 0.35;
+
+    mInput.value = animationM % 360;
+
+    update();
+  }
+
+  requestAnimationFrame(animate);
+}
+
+window.addEventListener("resize",update);
+
+update();
+
+animate();
+
+</script>
+
 </body>
 </html>
