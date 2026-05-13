@@ -1,396 +1,95 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>실제 케플러 운동 시뮬레이터</title>
-
-<style>
-*{
-  box-sizing:border-box;
-}
-
-body{
-  margin:0;
-  background:#020617;
-  color:white;
-  font-family:Arial;
-}
-
-header{
-  padding:20px;
-  border-bottom:1px solid rgba(255,255,255,0.1);
-}
-
-h1{
-  margin:0;
-}
-
-main{
-  display:grid;
-  grid-template-columns:350px 1fr;
-  gap:16px;
-  padding:16px;
-}
-
-.card{
-  background:#0f172a;
-  border-radius:16px;
-  padding:16px;
-}
-
-input{
-  width:100%;
-  margin-top:8px;
-  margin-bottom:12px;
-  padding:10px;
-  border-radius:10px;
-  border:none;
-  background:#020617;
-  color:white;
-}
-
-button{
-  width:100%;
-  padding:10px;
-  border:none;
-  border-radius:10px;
-  background:#2563eb;
-  color:white;
-  cursor:pointer;
-}
-
-canvas{
-  width:100%;
-  height:600px;
-  background:black;
-  border-radius:16px;
-}
-
-.result{
-  margin-top:16px;
-  line-height:1.8;
-}
-</style>
-</head>
-
-<body>
-
-<header>
-  <h1>케플러 운동 시뮬레이터</h1>
-</header>
-
-<main>
-
-<section class="card">
-
-<label>긴반지름 a</label>
-<input id="aInput" type="number" value="200">
-
-<label>이심률 e</label>
-<input id="eInput" type="number" value="0.6" step="0.01">
-
-<label>평균 근점 이각 M</label>
-<input id="mInput" type="number" value="0">
-
-<button id="toggleBtn">일시정지</button>
-
-<div class="result" id="result"></div>
-
-</section>
-
-<section class="card">
-  <canvas id="canvas"></canvas>
-</section>
-
-</main>
+<!-- 기존 animate 함수 부분을 이걸로 교체 -->
 
 <script>
 
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
-
-const aInput = document.getElementById("aInput");
-const eInput = document.getElementById("eInput");
-const mInput = document.getElementById("mInput");
-
-const result = document.getElementById("result");
-
-const toggleBtn = document.getElementById("toggleBtn");
-
-let playing = true;
-
-toggleBtn.onclick = () => {
-  playing = !playing;
-  toggleBtn.textContent = playing ? "일시정지" : "재생";
-};
-
-function degToRad(deg){
-  return deg * Math.PI / 180;
-}
-
-function radToDeg(rad){
-  return rad * 180 / Math.PI;
-}
-
-function normalize(rad){
-  const t = Math.PI * 2;
-  return ((rad % t) + t) % t;
-}
+let animationM = 0;
 
 /*
-  케플러 방정식:
-  M = E - e sin(E)
-
-  뉴턴-랩슨 방법으로 풂
+  행성 궤도 흔적 저장
 */
 
-function solveKepler(M,e){
-
-  M = normalize(M);
-
-  let E = e < 0.8 ? M : Math.PI;
-
-  let iterations = 0;
-
-  for(let i=0;i<100;i++){
-
-    const f = E - e*Math.sin(E) - M;
-
-    const fp = 1 - e*Math.cos(E);
-
-    if(Math.abs(fp) < 1e-12){
-      break;
-    }
-
-    const dE = f / fp;
-
-    E -= dE;
-
-    iterations++;
-
-    if(Math.abs(dE) < 1e-12){
-      break;
-    }
-  }
-
-  return {
-    E,
-    iterations
-  };
-}
-
-function calculate(a,e,Mdeg){
-
-  const M = degToRad(Mdeg);
-
-  const solved = solveKepler(M,e);
-
-  const E = solved.E;
-
-  /*
-    실제 케플러 거리식
-    r = a(1 - e cos(E))
-  */
-
-  const r = a * (1 - e*Math.cos(E));
-
-  /*
-    진근점이각 ν
-  */
-
-  const trueAnomaly = 2 * Math.atan2(
-    Math.sqrt(1+e) * Math.sin(E/2),
-    Math.sqrt(1-e) * Math.cos(E/2)
-  );
-
-  return {
-    M,
-    E,
-    Edeg:radToDeg(E),
-
-    r,
-
-    trueAnomaly,
-    trueAnomalyDeg:radToDeg(trueAnomaly),
-
-    iterations:solved.iterations
-  };
-}
-
-function resizeCanvas(){
-
-  const rect = canvas.getBoundingClientRect();
-
-  canvas.width = rect.width;
-  canvas.height = rect.height;
-}
-
-function draw(calc,a,e){
-
-  resizeCanvas();
-
-  const w = canvas.width;
-  const h = canvas.height;
-
-  ctx.clearRect(0,0,w,h);
-
-  ctx.fillStyle = "black";
-  ctx.fillRect(0,0,w,h);
-
-  const cx = w/2;
-  const cy = h/2;
-
-  const scale = 1.6;
-
-  const drawA = a * scale;
-
-  const drawB = a * Math.sqrt(1-e*e) * scale;
-
-  /*
-    항성 위치
-  */
-
-  const starX = cx - drawA*e;
-  const starY = cy;
-
-  /*
-    케플러 위치 계산
-  */
-
-  const x = drawA * (Math.cos(calc.E)-e);
-
-  const y = drawB * Math.sin(calc.E);
-
-  const px = cx + x;
-  const py = cy + y;
-
-  /*
-    궤도
-  */
-
-  ctx.strokeStyle = "#60a5fa";
-  ctx.lineWidth = 2;
-
-  ctx.beginPath();
-  ctx.ellipse(cx,cy,drawA,drawB,0,0,Math.PI*2);
-  ctx.stroke();
-
-  /*
-    거리선
-  */
-
-  ctx.strokeStyle = "rgba(255,255,255,0.5)";
-  ctx.setLineDash([5,5]);
-
-  ctx.beginPath();
-  ctx.moveTo(starX,starY);
-  ctx.lineTo(px,py);
-  ctx.stroke();
-
-  ctx.setLineDash([]);
-
-  /*
-    항성
-  */
-
-  const gradient = ctx.createRadialGradient(
-    starX,starY,0,
-    starX,starY,30
-  );
-
-  gradient.addColorStop(0,"white");
-  gradient.addColorStop(0.4,"yellow");
-  gradient.addColorStop(1,"rgba(255,255,0,0)");
-
-  ctx.fillStyle = gradient;
-
-  ctx.beginPath();
-  ctx.arc(starX,starY,30,0,Math.PI*2);
-  ctx.fill();
-
-  ctx.fillStyle = "yellow";
-
-  ctx.beginPath();
-  ctx.arc(starX,starY,8,0,Math.PI*2);
-  ctx.fill();
-
-  /*
-    행성
-  */
-
-  ctx.fillStyle = "#60a5fa";
-
-  ctx.beginPath();
-  ctx.arc(px,py,8,0,Math.PI*2);
-  ctx.fill();
-
-  /*
-    텍스트
-  */
-
-  ctx.fillStyle = "white";
-
-  ctx.font = "16px Arial";
-
-  ctx.fillText(
-    "r = " + calc.r.toFixed(2),
-    (starX+px)/2,
-    (starY+py)/2
-  );
-
-}
-
-function update(){
-
-  const a = Number(aInput.value);
-
-  const e = Number(eInput.value);
-
-  const Mdeg = Number(mInput.value);
-
-  const calc = calculate(a,e,Mdeg);
-
-  draw(calc,a,e);
-
-  result.innerHTML = `
-    평균 근점 이각 M = ${Mdeg.toFixed(2)}°<br>
-    이심 근점 이각 E = ${calc.Edeg.toFixed(2)}°<br>
-    진근점 이각 ν = ${calc.trueAnomalyDeg.toFixed(2)}°<br>
-    현재 거리 r = ${calc.r.toFixed(3)}<br>
-    뉴턴 반복 횟수 = ${calc.iterations}
-  `;
-}
-
-let animationM = 0;
+const trail = [];
 
 function animate(){
 
   if(playing){
 
     /*
-      M은 시간에 비례하여 일정 증가
-      실제 위치는 케플러 방정식으로 계산
+      시간 증가
+      M이 시간 역할
     */
 
-    animationM += 0.35;
+    animationM += 0.4;
 
     mInput.value = animationM % 360;
 
+    const a = Number(aInput.value);
+    const e = Number(eInput.value);
+
+    const calc = calculate(a,e,animationM);
+
+    /*
+      현재 행성 위치 계산
+    */
+
+    const rect = canvas.getBoundingClientRect();
+
+    const w = rect.width;
+    const h = rect.height;
+
+    const cx = w/2;
+    const cy = h/2;
+
+    const scale = 1.6;
+
+    const drawA = a * scale;
+    const drawB = a * Math.sqrt(1-e*e) * scale;
+
+    const x = drawA * (Math.cos(calc.E)-e);
+    const y = drawB * Math.sin(calc.E);
+
+    const px = cx + x;
+    const py = cy + y;
+
+    /*
+      궤도 흔적 저장
+    */
+
+    trail.push({x:px,y:py});
+
+    /*
+      흔적 길이 제한
+    */
+
+    if(trail.length > 250){
+      trail.shift();
+    }
+
     update();
+
+    /*
+      흔적 그리기
+    */
+
+    ctx.beginPath();
+
+    for(let i=0;i<trail.length;i++){
+
+      const p = trail[i];
+
+      const alpha = i / trail.length;
+
+      ctx.fillStyle = `rgba(96,165,250,${alpha})`;
+
+      ctx.beginPath();
+      ctx.arc(p.x,p.y,2,0,Math.PI*2);
+      ctx.fill();
+    }
   }
 
   requestAnimationFrame(animate);
 }
 
-window.addEventListener("resize",update);
-
-update();
-
 animate();
 
 </script>
-
-</body>
-</html>
